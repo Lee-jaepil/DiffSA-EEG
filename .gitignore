@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Data (too large for repo; see README for download instructions)
+Preprocessed_Data/
+*.npy
+*.pkl
+*.mat
+
+# Exclude large data files but keep sample_data
+!sample_data/
+!sample_data/**/*.npz
+
+# Trained models and experiment outputs
+model_result/
+ablation_results/
+Visual_results/
+logs/
+
+# Analysis notebooks and statistics (internal use)
+Anlaysis/
+Statistic/
+History/
+
+# Claude Code / IDE
+.claude/
+CLAUDE.md
+
+# Manuscript
+*.pdf
+
+# Result JSON files (experiment-specific)
+baseline_models_comprehensive_results*.json
+corrected_auc_results.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+*.env
+.venv/
+env/
