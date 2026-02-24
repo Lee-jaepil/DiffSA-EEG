@@ -18,7 +18,7 @@ DiffSA-EEG extends the [Diff-E](https://github.com/diffe2023/Diff-E) framework (
 Automated interpretation of clinical EEG is challenging due to heterogeneous signal characteristics, noise contamination, and inter-subject variability. DiffSA-EEG addresses these challenges by integrating diffusion modeling directly into a discriminative classification pipeline, rather than using it solely for data generation or augmentation.
 
 **Key contributions:**
-- Integrates a DDPM as a **trajectory-based feature regularizer** that stabilizes learning and enhances robustness under noisy clinical conditions
+- Integrates a DDPM as a **trajectory-based regularization mechanism** that stabilizes feature learning and enhances robustness under noisy clinical conditions
 - Introduces a **learnable spatial filter** (SF) based on SVD decomposition to reduce channel dimensionality and enhance topographical discriminability
 - Combines **stacked denoising autoencoders** (SDA) with **attention mechanisms** (self-attention + CBAM) for noise-invariant feature learning
 - Demonstrates that **optimal component combinations are dataset-dependent**: SF+SDA for TUAB, SDA+CBAM for TUEP
@@ -27,7 +27,7 @@ Automated interpretation of clinical EEG is challenging due to heterogeneous sig
 ## Architecture
 
 <p align="center">
-  <img src="figure_1_JL.png" alt="DiffSA-EEG Overall Architecture" width="600">
+  <img src="fig1_architecture.png" alt="DiffSA-EEG Overall Architecture" width="600">
 </p>
 
 The framework consists of three jointly optimized components:
@@ -40,7 +40,7 @@ The framework consists of three jointly optimized components:
 ### Component Details
 
 <p align="center">
-  <img src="figure_2_JL.png" alt="DiffSA-EEG Component Details" width="700">
+  <img src="fig2_components.png" alt="DiffSA-EEG Component Details" width="700">
 </p>
 
 **(a)** ResConv block with noise injection, **(b)** CBAM (Channel + Spatial Attention), **(c)** SDA Layer with element-wise summation and sigmoid gating, **(d)** Attention module with MaxPool and AvgPool.
