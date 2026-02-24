@@ -26,32 +26,9 @@ Automated interpretation of clinical EEG is challenging due to heterogeneous sig
 
 ## Architecture
 
-```
-                     Forward pass
-   x_0  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ → x_t
-    │                                          │
-    ▼                                          ▼
-┌──────────────┐                      ┌──────────────┐
-│ Spatial Filter│                      │  ResConv      │
-│  ResConv+CBAM │                      │  CBAM         │
-│  Attention    │     Encoder          │  Attention    │
-│  ResConv+CBAM │                      │  ResConv+CBAM │     DDPM
-│  Attention    │                      │  Attention    │   (Conditional
-│  ResConv+CBAM │                      │  ResConv+CBAM │     U-Net)
-│  Attention    │                      │  Attention    │
-│  SDA Layer    │                      │  ResConv+CBAM │
-│              ─┼──────────────────────┼──► x̂_0       │
-│   Decoder     │   Skip connections   │  Spatial Filter│
-│  SDA Layer    │◄─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┤              │
-│  ResConv+CBAM │                      └──────────────┘
-│  Attention    │
-│  Conv1D       │
-│  Attention    │
-│  Inv. SF      │
-└───────┬───────┘
-        │
-   AdaPool → FC → ŷ
-```
+<p align="center">
+  <img src="figure_1_JL.png" alt="DiffSA-EEG Overall Architecture" width="600">
+</p>
 
 The framework consists of three jointly optimized components:
 1. **DDPM (Conditional U-Net)**: Models the complex distribution of EEG signals and provides diffusion-based feature regularization via skip connections to the CAE decoder
@@ -59,6 +36,14 @@ The framework consists of three jointly optimized components:
 3. **Classification Head**: Adaptive average pooling followed by a fully connected layer that produces predictions from the shared latent representation
 
 **Joint loss**: `L_total = L_DDPM + L_CAE + L_CLS`
+
+### Component Details
+
+<p align="center">
+  <img src="figure_2_JL.png" alt="DiffSA-EEG Component Details" width="700">
+</p>
+
+**(a)** ResConv block with noise injection, **(b)** CBAM (Channel + Spatial Attention), **(c)** SDA Layer with element-wise summation and sigmoid gating, **(d)** Attention module with MaxPool and AvgPool.
 
 ## Results
 
@@ -168,10 +153,10 @@ Preprocessed_Data/
 ├── TUAB_Evaluation/
 │   └── evaluation_dataset.npz
 └── TUEP/
-    ├── Group_1/
-    │   └── group_1.npz
-    ├── Group_2/
-    │   └── group_2.npz
+    ├── Fold_1/
+    │   └── fold_1_data.npz        # For 5-fold cross-validation
+    ├── Fold_2/
+    │   └── fold_2_data.npz
     └── ...
 ```
 
@@ -242,21 +227,25 @@ python main.py --device cuda:0 --model BDTCN --dataset TRA --num_epochs 100 --ba
 
 The ablation study evaluates all 16 combinations of the four components (SF, SDA, Attention, CBAM) added to the Diff-E backbone.
 
-### Running Ablation Configurations
+### Single Configuration
 
 ```bash
-# Train a specific configuration on TUEP
-python main.py \
-    --device cuda:0 \
-    --dataset TUEP \
-    --model SSDA_Modular \
-    --num_epochs 100 \
-    --batch_size 8 \
+python ablation_study_TUEP_5fold.py \
     --num_runs 10 \
+    --num_epochs 100 \
+    --batch_size 32 \
+    --device cuda:0 \
+    --run_single_config \
     --config_name "SF+SSDA+Attn+CBAM"
 ```
 
-Each configuration is evaluated over 10 independent runs.
+### All 16 Configurations (Parallel across GPUs)
+
+```bash
+bash scripts/run_ablation_5fold_parallel.sh
+```
+
+This distributes the 16 configurations across 2 GPUs, running 10 independent runs with 5-fold cross-validation for each (total: 800 model training runs).
 
 ### Ablation Configurations
 
@@ -295,19 +284,24 @@ model_result/
     └── metrics.json            # Training and evaluation metrics per epoch
 
 ablation_results/
-└── {config_name}/              # Per-configuration results
-    ├── run_{i}/
-    │   ├── best_model.pth
-    │   └── metrics.json
-    └── summary.json            # Aggregated metrics across runs
+└── ablation_5fold_{timestamp}/
+    ├── experiment_config.txt
+    ├── {config_name}/          # Per-configuration results
+    │   ├── run_{i}/
+    │   │   └── fold_{j}/
+    │   │       ├── best_model.pth
+    │   │       └── metrics.json
+    │   └── summary.json        # Aggregated metrics across runs and folds
+    └── *.log                   # Training logs
 ```
 
 ## Project Structure
 
 ```
 DiffSA-EEG/
-├── main.py                         # Main training script
+├── main.py                         # Main training script (TUAB)
 ├── evaluation.py                   # Evaluation and metrics
+├── ablation_study_TUEP_5fold.py    # Ablation study with 5-fold CV
 ├── models/
 │   ├── SSDA_Modular.py             # DiffSA-EEG component-configurable architecture (toggleable SF/SDA/Attn/CBAM)
 │   ├── models_DiffE.py             # Diff-E base model (DDPM + autoencoder, no additional components)
@@ -317,8 +311,13 @@ DiffSA-EEG/
 │   ├── models_BDTCN.py             # TCN baseline
 │   ├── models_Deep4Net.py          # Deep4Net baseline
 │   └── utils.py                    # Data loading, training utilities, model initialization
+├── comparison_models_5fold.py      # 5-fold CV comparison for baseline models
+├── summarize_5fold_results.py      # Summarize baseline comparison results
+├── summarize_ablation_results.py   # Summarize ablation study results
 ├── scripts/
-│   └── run_train.sh                # Training shell script
+│   ├── run_train.sh                # Training shell script
+│   ├── run_ablation_5fold_parallel.sh    # Parallel ablation script
+│   └── run_comparison_5fold_parallel.sh  # Parallel baseline comparison script
 ├── sample_data/                    # Sample data for code verification only
 ├── Preprocessed_Data/              # Preprocessed EEG data (not included)
 └── requirements.txt                # Python dependencies
