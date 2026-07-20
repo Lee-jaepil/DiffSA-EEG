@@ -136,7 +136,7 @@ The paper uses TUAB and TUEP from the Temple University Hospital EEG Corpus. The
 **credentialed**: a registration form must be signed and returned to the Neural Engineering Data
 Consortium, and the agreement does not permit subscribers to redistribute the data. No recording,
 raw or preprocessed, is included in this repository for that reason. Request access at
-<https://isip.piconepress.com/projects/nedc/html/tuh_eeg/>.
+<https://isip.piconepress.com/projects/tuh_eeg/>.
 
 Use `sample_data/make_sample_data.py` to exercise the code while access is pending.
 
