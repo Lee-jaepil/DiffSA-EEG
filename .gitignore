@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+runs/
+data/
+sample_data/train/
+sample_data/test.npz
+*.pth
